@@ -41,7 +41,7 @@ const theme = extendTheme({
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <GoogleOAuthProvider clientId={"139648417797-l50rt1vj6fd2vhrufsahlvh9gd3u4lpe.apps.googleusercontent.com"}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <ChakraProvider theme={theme}>
         <App />
       </ChakraProvider>
