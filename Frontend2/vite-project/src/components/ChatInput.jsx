@@ -8,6 +8,7 @@ const ChatInput = ({
   setInputMessage,
   handleSendMessage,
   autoFocus = false,
+  currentSession,
 }) => {
   const textareaRef = useRef(null);
 
@@ -34,7 +35,7 @@ const ChatInput = ({
     <Box
       p={isEmptyState ? 0 : 4}
       bg={isEmptyState ? "transparent" : "gray.900"}
-      borderTop={!isEmptyState && "1px"}
+      borderTop={!isEmptyState && currentSession ? "1px" : "none"}
       borderColor="gray.700"
       position="relative"
       w="100%"

@@ -6,21 +6,23 @@ import {
   Heading,
   VStack,
   Text,
-  Image,
   Container,
 } from "@chakra-ui/react";
 import { createStandaloneToast } from "@chakra-ui/toast";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const { ToastContainer, toast } = createStandaloneToast();
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    try {
-      // TODO: Implement Google OAuth
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      // Store the access token in localStorage
+      localStorage.setItem("googleAccessToken", tokenResponse.access_token);
+
       toast({
         title: "Success",
         description: "Successfully logged in with Google",
@@ -29,16 +31,40 @@ const Login = () => {
         isClosable: true,
       });
       navigate("/chat");
-    } catch (error) {
+    },
+    onError: (error) => {
+      console.error("Login Failed:", error);
+
+      let errorMessage = "Failed to login with Google";
+
+      // Handle specific error cases
+      if (error.error === "popup_closed_by_user") {
+        errorMessage = "Login was cancelled";
+      } else if (error.error === "access_denied") {
+        errorMessage = "Access was denied. Please try again.";
+      } else if (error.error === "invalid_request") {
+        errorMessage = "Invalid request. Please try again.";
+      } else if (error.error === "unauthorized_client") {
+        errorMessage = "Unauthorized client. Please contact support.";
+      } else if (error.error === "unsupported_response_type") {
+        errorMessage = "Unsupported response type. Please try again.";
+      } else if (error.error === "server_error") {
+        errorMessage = "Server error. Please try again later.";
+      } else if (error.error === "temporarily_unavailable") {
+        errorMessage =
+          "Service temporarily unavailable. Please try again later.";
+      }
+
       toast({
         title: "Error",
-        description: "Failed to login with Google",
+        description: errorMessage,
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
+        position: "top",
       });
-    }
-  };
+    },
+  });
 
   return (
     <>
@@ -86,7 +112,7 @@ const Login = () => {
                 colorScheme="blue"
                 size="lg"
                 width="100%"
-                onClick={handleGoogleLogin}
+                onClick={() => handleGoogleLogin()}
                 _hover={{
                   transform: "translateY(-2px)",
                   boxShadow: "lg",
