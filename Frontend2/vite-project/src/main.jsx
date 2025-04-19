@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+
 const theme = extendTheme({
   config: {
     initialColorMode: "light",
@@ -37,11 +38,10 @@ const theme = extendTheme({
     },
   },
 });
-const clientId =
-  "139648417797-l50rt1vj6fd2vhrufsahlvh9gd3u4lpe.apps.googleusercontent.com";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={"139648417797-l50rt1vj6fd2vhrufsahlvh9gd3u4lpe.apps.googleusercontent.com"}>
       <ChakraProvider theme={theme}>
         <App />
       </ChakraProvider>
