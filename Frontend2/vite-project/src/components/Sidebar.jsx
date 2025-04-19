@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -40,12 +40,46 @@ const Sidebar = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredChatId, setHoveredChatId] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate();
-  const userName = "User";
+
+  useEffect(() => {
+    const storedProfile = localStorage.getItem("userProfile");
+    if (storedProfile) {
+      setUserProfile(JSON.parse(storedProfile));
+    }
+  }, []);
 
   const handleSignOut = () => {
+    // Clear local storage
+    localStorage.removeItem("googleAccessToken");
     localStorage.removeItem("chatSessions");
-    navigate("/login");
+    localStorage.removeItem("userProfile");
+
+    // Revoke Google access token
+    const token = localStorage.getItem("googleAccessToken");
+    if (token) {
+      fetch("https://oauth2.googleapis.com/revoke?token=" + token, {
+        method: "POST",
+        headers: {
+          "Content-type": "application/x-www-form-urlencoded",
+        },
+      })
+        .then(() => {
+          // Clear local storage again to ensure everything is removed
+          localStorage.removeItem("googleAccessToken");
+          localStorage.removeItem("chatSessions");
+          localStorage.removeItem("userProfile");
+          navigate("/login");
+        })
+        .catch((error) => {
+          console.error("Error revoking token:", error);
+          // Still navigate to login even if token revocation fails
+          navigate("/login");
+        });
+    } else {
+      navigate("/login");
+    }
   };
 
   const handleEditTitle = (sessionId) => {
@@ -277,9 +311,9 @@ const Sidebar = ({
       <Box pt={4} borderTop="1px" borderColor="gray.700" w="100%">
         <HStack spacing={3} justify="space-between">
           <HStack flex="1">
-            <Avatar size="md" name={userName} />
+            <Avatar size="md" name={userProfile?.name || "User"} />
             <Text fontSize="md" color="gray.300" noOfLines={1}>
-              {userName}
+              {userProfile?.name || "User"}
             </Text>
           </HStack>
           <IconButton

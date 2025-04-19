@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Button,
@@ -18,10 +18,48 @@ const { ToastContainer, toast } = createStandaloneToast();
 const Login = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem("googleAccessToken");
+    if (token) {
+      navigate("/chat");
+    }
+  }, [navigate]);
+
+  const fetchUserProfile = async (accessToken) => {
+    try {
+      const response = await fetch(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
   const handleGoogleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
+    onSuccess: async (tokenResponse) => {
       // Store the access token in localStorage
       localStorage.setItem("googleAccessToken", tokenResponse.access_token);
+
+      // Fetch user profile information
+      const userProfile = await fetchUserProfile(tokenResponse.access_token);
+      if (userProfile) {
+        localStorage.setItem(
+          "userProfile",
+          JSON.stringify({
+            name: userProfile.name,
+            picture: userProfile.picture,
+          })
+        );
+      }
 
       toast({
         title: "Success",

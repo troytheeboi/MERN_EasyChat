@@ -111,6 +111,14 @@ const Chat = () => {
 
   const variant = useBreakpointValue({ base: "drawer", lg: "sidebar" });
 
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem("googleAccessToken");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
   const toggleSidebar = () => {
     if (variant === "drawer") {
       if (isOpen) onClose();
