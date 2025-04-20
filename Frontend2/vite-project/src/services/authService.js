@@ -1,4 +1,5 @@
 import { createStandaloneToast } from "@chakra-ui/toast";
+import { API_BASE_URL } from '../config/config';
 
 const { toast } = createStandaloneToast();
 
@@ -13,7 +14,6 @@ export const fetchUserProfile = async (accessToken) => {
       }
     );
     const data = await response.json();
-    console.log(data);
     return data;
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -43,11 +43,11 @@ export const handleLoginSuccess = async (tokenResponse, navigate) => {
     };
 
     // Check if user exists in our database
-    const response = await fetch(`http://localhost:3000/api/users/google/${userProfile.id}`);
+    const response = await fetch(`${API_BASE_URL}/api/users/google/${userProfile.id}`);
     
     if (response.status === 404) {
       // User doesn't exist, create new user
-      const createResponse = await fetch('http://localhost:3000/api/users', {
+      const createResponse = await fetch(`${API_BASE_URL}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

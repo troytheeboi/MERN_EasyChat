@@ -115,8 +115,8 @@ const Sidebar = ({
   );
 
   const SidebarContent = (
-    <VStack h="100%" spacing={4} align="stretch" px={2} pb={4}>
-      <HStack justify="space-between" w="100%" mb={4}>
+    <VStack h="100%" spacing={4} align="stretch" px={2} pb={4} pt={4}>
+      <HStack justify="space-between" w="100%" mb={2}>
         <Heading size="md" color="white">
           My Planner
         </Heading>
@@ -141,6 +141,7 @@ const Sidebar = ({
           startNewChat();
           if (variant === "drawer") onClose();
         }}
+        mt={2}
       >
         New Chat
       </Button>
