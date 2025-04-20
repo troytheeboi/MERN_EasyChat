@@ -13,6 +13,7 @@ export const fetchUserProfile = async (accessToken) => {
       }
     );
     const data = await response.json();
+    console.log(data);
     return data;
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -21,29 +22,75 @@ export const fetchUserProfile = async (accessToken) => {
 };
 
 export const handleLoginSuccess = async (tokenResponse, navigate) => {
-  // Store the access token in localStorage
-  localStorage.setItem("googleAccessToken", tokenResponse.access_token);
+  try {
+    // Store the access token in localStorage
+    localStorage.setItem("googleAccessToken", tokenResponse.access_token);
 
-  // Fetch user profile information
-  const userProfile = await fetchUserProfile(tokenResponse.access_token);
-  if (userProfile) {
+    // Fetch user profile information
+    const userProfile = await fetchUserProfile(tokenResponse.access_token);
+    if (!userProfile) {
+      throw new Error("Failed to fetch user profile");
+    }
+
+    // Prepare user data
+    const userData = {
+      googleId: userProfile.id,
+      name: userProfile.name,
+      email: userProfile.email,
+      profilePhoto: userProfile.picture,
+      accessToken: tokenResponse.access_token,
+      refreshToken: tokenResponse.refresh_token
+    };
+
+    // Check if user exists in our database
+    const response = await fetch(`http://localhost:3000/api/users/google/${userProfile.id}`);
+    
+    if (response.status === 404) {
+      // User doesn't exist, create new user
+      const createResponse = await fetch('http://localhost:3000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (!createResponse.ok) {
+        throw new Error('Failed to create user');
+      }
+    } else if (!response.ok) {
+      throw new Error('Failed to check user existence');
+    }
+
+    // Store user profile in localStorage
     localStorage.setItem(
       "userProfile",
       JSON.stringify({
         name: userProfile.name,
         picture: userProfile.picture,
+        email: userProfile.email,
+        googleId: userProfile.id
       })
     );
-  }
 
-  toast({
-    title: "Success",
-    description: "Successfully logged in with Google",
-    status: "success",
-    duration: 3000,
-    isClosable: true,
-  });
-  navigate("/chat");
+    toast({
+      title: "Success",
+      description: "Successfully logged in with Google",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+    navigate("/chat");
+  } catch (error) {
+    console.error("Login Error:", error);
+    toast({
+      title: "Error",
+      description: error.message || "Failed to complete login process",
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+    });
+  }
 };
 
 export const handleLoginError = (error) => {
@@ -76,4 +123,45 @@ export const handleLoginError = (error) => {
     isClosable: true,
     position: "top",
   });
+};
+
+export const handleSignOut = async (navigate) => {
+  try {
+    // Clear local storage
+    localStorage.removeItem("googleAccessToken");
+    localStorage.removeItem("chatSessions");
+    localStorage.removeItem("userProfile");
+
+    // Revoke Google access token
+    const token = localStorage.getItem("googleAccessToken");
+    if (token) {
+      await fetch("https://oauth2.googleapis.com/revoke?token=" + token, {
+        method: "POST",
+        headers: {
+          "Content-type": "application/x-www-form-urlencoded",
+        },
+      });
+    }
+
+    toast({
+      title: "Success",
+      description: "Successfully signed out",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+
+    navigate("/login");
+  } catch (error) {
+    console.error("Error signing out:", error);
+    toast({
+      title: "Error",
+      description: "Failed to sign out. Please try again.",
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+    });
+    // Still navigate to login even if token revocation fails
+    navigate("/login");
+  }
 }; 

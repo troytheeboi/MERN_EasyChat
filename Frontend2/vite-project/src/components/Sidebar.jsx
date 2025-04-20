@@ -26,6 +26,7 @@ import {
 } from "react-icons/fa";
 import { PanelLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { handleSignOut } from "../services/authService";
 
 const Sidebar = ({
   onClose,
@@ -50,36 +51,8 @@ const Sidebar = ({
     }
   }, []);
 
-  const handleSignOut = () => {
-    // Clear local storage
-    localStorage.removeItem("googleAccessToken");
-    localStorage.removeItem("chatSessions");
-    localStorage.removeItem("userProfile");
-
-    // Revoke Google access token
-    const token = localStorage.getItem("googleAccessToken");
-    if (token) {
-      fetch("https://oauth2.googleapis.com/revoke?token=" + token, {
-        method: "POST",
-        headers: {
-          "Content-type": "application/x-www-form-urlencoded",
-        },
-      })
-        .then(() => {
-          // Clear local storage again to ensure everything is removed
-          localStorage.removeItem("googleAccessToken");
-          localStorage.removeItem("chatSessions");
-          localStorage.removeItem("userProfile");
-          navigate("/login");
-        })
-        .catch((error) => {
-          console.error("Error revoking token:", error);
-          // Still navigate to login even if token revocation fails
-          navigate("/login");
-        });
-    } else {
-      navigate("/login");
-    }
+  const handleSignOutClick = () => {
+    handleSignOut(navigate);
   };
 
   const handleEditTitle = (sessionId) => {
@@ -133,7 +106,7 @@ const Sidebar = ({
           w="100%"
           h="40px"
           p={0}
-          onClick={handleSignOut}
+          onClick={handleSignOutClick}
           _hover={{ bg: "whiteAlpha.200" }}
           aria-label="User profile and sign out"
         />
@@ -331,7 +304,7 @@ const Sidebar = ({
             variant="ghost"
             colorScheme="whiteAlpha"
             size="md"
-            onClick={handleSignOut}
+            onClick={handleSignOutClick}
             aria-label="Sign out"
             color="white"
             _hover={{ color: "red.400", bg: "whiteAlpha.200" }}
