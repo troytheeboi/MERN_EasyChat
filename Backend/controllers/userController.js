@@ -34,6 +34,22 @@ export const getUser = async (req, res) => {
     }
 };
 
+// Get a user by Google ID
+export const getUserByGoogleId = async (req, res) => {
+    try {
+        const { googleId } = req.params;
+        const user = await User.findByGoogleId(googleId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Update a user
 export const updateUser = async (req, res) => {
     try {

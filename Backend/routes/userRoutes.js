@@ -4,7 +4,8 @@ import {
     getUsers,
     getUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    getUserByGoogleId
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const router = express.Router();
 router.post('/', createUser);
 router.get('/', getUsers);
 router.get('/:id', getUser);
+router.get('/google/:googleId', getUserByGoogleId);
 router.put('/:id', updateUser);
 router.delete('/:id', deleteUser);
 

@@ -122,7 +122,13 @@ const Sidebar = ({
 
       <Box pt={4} w="100%">
         <IconButton
-          icon={<Avatar size="sm" name={userName} />}
+          icon={
+            <Avatar
+              size="sm"
+              src={userProfile?.picture}
+              name={userProfile?.name || "User"}
+            />
+          }
           variant="ghost"
           w="100%"
           h="40px"
@@ -311,7 +317,11 @@ const Sidebar = ({
       <Box pt={4} borderTop="1px" borderColor="gray.700" w="100%">
         <HStack spacing={3} justify="space-between">
           <HStack flex="1">
-            <Avatar size="md" name={userProfile?.name || "User"} />
+            <Avatar
+              size="md"
+              src={userProfile?.picture}
+              name={userProfile?.name || "User"}
+            />
             <Text fontSize="md" color="gray.300" noOfLines={1}>
               {userProfile?.name || "User"}
             </Text>
