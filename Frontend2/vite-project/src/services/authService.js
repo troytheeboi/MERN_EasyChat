@@ -1,5 +1,6 @@
 import { createStandaloneToast } from "@chakra-ui/toast";
-import { API_BASE_URL } from '../config/config';
+import { API_BASE_URL } from "../config/config";
+import axios from "axios";
 
 const { toast } = createStandaloneToast();
 
@@ -39,27 +40,41 @@ export const handleLoginSuccess = async (tokenResponse, navigate) => {
       email: userProfile.email,
       profilePhoto: userProfile.picture,
       accessToken: tokenResponse.access_token,
-      refreshToken: tokenResponse.refresh_token
+      refreshToken: tokenResponse.refresh_token,
     };
 
     // Check if user exists in our database
-    const response = await fetch(`${API_BASE_URL}/api/users/google/${userProfile.id}`);
-    
+    const response = await fetch(
+      `${API_BASE_URL}/api/users/${userProfile.id}`
+    );
+
     if (response.status === 404) {
       // User doesn't exist, create new user
       const createResponse = await fetch(`${API_BASE_URL}/api/users`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
       });
 
       if (!createResponse.ok) {
-        throw new Error('Failed to create user');
+        throw new Error("Failed to create user");
       }
-    } else if (!response.ok) {
-      throw new Error('Failed to check user existence');
+    } else if (response.status != 404) {
+      console.log("Updating user");
+      const updateResponse = await fetch(`${API_BASE_URL}/api/users/${userProfile.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userData),
+        }
+      );
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update user");
+      }
     }
 
     // Store user profile in localStorage
@@ -69,7 +84,7 @@ export const handleLoginSuccess = async (tokenResponse, navigate) => {
         name: userProfile.name,
         picture: userProfile.picture,
         email: userProfile.email,
-        googleId: userProfile.id
+        googleId: userProfile.id,
       })
     );
 
@@ -164,4 +179,4 @@ export const handleSignOut = async (navigate) => {
     // Still navigate to login even if token revocation fails
     navigate("/login");
   }
-}; 
+};

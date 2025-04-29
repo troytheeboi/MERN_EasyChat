@@ -36,6 +36,8 @@ const userSchema = new mongoose.Schema({
 
 // Static method to find a user by Google ID
 userSchema.statics.findByGoogleId = async function(googleId) {
+    console.log(`googleId in user model: ${googleId}`);
+    const user = await this.findOne({ googleId });
     return await this.findOne({ googleId });
 };
 

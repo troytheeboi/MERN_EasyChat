@@ -13,6 +13,7 @@ import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import { handleLoginSuccess, handleLoginError } from "../services/authService";
+import axios from "axios";
 
 const { ToastContainer } = createStandaloneToast();
 
@@ -28,8 +29,22 @@ const Login = () => {
   }, [navigate]);
 
   const handleGoogleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => handleLoginSuccess(tokenResponse, navigate),
+    onSuccess: async ({ code }) => {
+      try {
+        const tokens = await axios.post(
+          "http://localhost:3000/api/auth/google",
+          {
+            code,
+          }
+        );
+        handleLoginSuccess(tokens.data, navigate);
+      } catch (error) {
+        console.error("Google OAuth error:", error);
+        handleLoginError(error);
+      }
+    },
     onError: handleLoginError,
+    flow: "auth-code",
     scope: [
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/userinfo.email",
