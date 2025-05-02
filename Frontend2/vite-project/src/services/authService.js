@@ -1,6 +1,5 @@
 import { createStandaloneToast } from "@chakra-ui/toast";
 import { API_BASE_URL } from "../config/config";
-import axios from "axios";
 
 const { toast } = createStandaloneToast();
 

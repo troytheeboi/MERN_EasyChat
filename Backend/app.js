@@ -2,6 +2,7 @@ import express from "express";
 import { connectDB } from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import openaiRoutes from "./routes/openaiRoutes.js";
 import cors from "cors";
 import dotenv from "dotenv";
 
@@ -21,6 +22,7 @@ app.use(express.json());
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/openai", openaiRoutes);
 
 app.listen(3000, () => {
   connectDB();

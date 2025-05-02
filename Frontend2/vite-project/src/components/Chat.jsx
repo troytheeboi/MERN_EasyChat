@@ -15,6 +15,7 @@ import Sidebar from "./Sidebar";
 import ChatInput from "./ChatInput";
 import EmptyState from "./EmptyState";
 import MessageList from "./MessageList";
+import { sendMessage } from "../services/openaiService";
 
 const { ToastContainer, toast } = createStandaloneToast();
 
@@ -219,20 +220,14 @@ const Chat = () => {
     setInputMessage("");
 
     try {
-      // TODO: Implement actual API call
-      const response = await new Promise((resolve) =>
-        setTimeout(
-          () =>
-            resolve({
-              message: "This is a mock response from the AI assistant.",
-            }),
-          1000
-        )
+      const response = await sendMessage(
+        inputMessage,
+        currentSession?.conversationId
       );
 
       const aiMessage = {
         id: Date.now() + 1,
-        content: response.message,
+        content: response.response,
         sender: "assistant",
         timestamp: new Date().toISOString(),
       };
@@ -245,6 +240,7 @@ const Chat = () => {
         const updatedSession = {
           ...currentSession,
           messages: [...(currentSession.messages || []), aiMessage],
+          conversationId: response.conversationId, // Store the conversation ID
         };
         setChatSessions((prev) =>
           prev.map((session) =>
@@ -256,7 +252,7 @@ const Chat = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: "Failed to get response from AI",
         status: "error",
         duration: 3000,
         isClosable: true,
