@@ -1,8 +1,12 @@
 import { API_BASE_URL } from "../config/config";
 
-
 export const sendMessage = async (prompt, conversationId = null) => {
   try {
+    const userProfile = JSON.parse(localStorage.getItem("userProfile"));
+    if (!userProfile?.googleId) {
+      throw new Error("User not authenticated");
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/openai/chat`, {
       method: "POST",
       headers: {
@@ -11,6 +15,7 @@ export const sendMessage = async (prompt, conversationId = null) => {
       body: JSON.stringify({
         prompt,
         conversationId,
+        googleId: userProfile.googleId,
       }),
     });
 

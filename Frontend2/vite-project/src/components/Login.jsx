@@ -32,7 +32,7 @@ const Login = () => {
     onSuccess: async ({ code }) => {
       try {
         const tokens = await axios.post(
-          "http://localhost:3000/api/auth/google",
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`,
           {
             code,
           }

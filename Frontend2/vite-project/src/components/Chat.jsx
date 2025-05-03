@@ -222,7 +222,8 @@ const Chat = () => {
     try {
       const response = await sendMessage(
         inputMessage,
-        currentSession?.conversationId
+        currentSession?.conversationId,
+        currentSession?.title
       );
 
       const aiMessage = {
@@ -240,7 +241,9 @@ const Chat = () => {
         const updatedSession = {
           ...currentSession,
           messages: [...(currentSession.messages || []), aiMessage],
-          conversationId: response.conversationId, // Store the conversation ID
+          conversationId: response.conversationId,
+          title: response.title,
+          summary: response.summary || currentSession.summary,
         };
         setChatSessions((prev) =>
           prev.map((session) =>

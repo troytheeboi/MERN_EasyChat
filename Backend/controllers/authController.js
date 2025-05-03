@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
 import { OAuth2Client, UserRefreshClient } from "google-auth-library";
-
-dotenv.config();
 
 const oAuth2Client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,

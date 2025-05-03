@@ -7,6 +7,19 @@ const conversationSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    googleId: {
+      type: String,
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      default: "New Chat",
+    },
+    summary: {
+      type: String,
+      default: null,
+    },
     messages: [
       {
         role: {
