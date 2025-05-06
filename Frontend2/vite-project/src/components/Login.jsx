@@ -21,7 +21,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const token = localStorage.getItem("googleAccessToken");
     if (token) {
       navigate("/chat");
@@ -48,8 +47,6 @@ const Login = () => {
     scope: [
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/calendar",
-      "https://www.googleapis.com/auth/tasks",
     ].join(" "),
     access_type: "offline",
     prompt: "consent",
@@ -75,18 +72,25 @@ const Login = () => {
                   w="80px"
                   h="80px"
                   borderRadius="full"
-                  bg="blue.500"
+                  bg="white"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                   boxShadow="md"
+                  overflow="hidden"
                 >
-                  <Text fontSize="2xl" fontWeight="bold" color="white">
-                    MP
-                  </Text>
+                  <img
+                    src="/easy_chat_logo.png"
+                    alt="Easy Chat Logo"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 </Box>
                 <Heading size="xl" color="white">
-                  My Planner
+                  Easy Chat
                 </Heading>
               </VStack>
 

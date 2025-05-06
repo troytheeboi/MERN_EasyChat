@@ -8,13 +8,13 @@ import {
 import Login from "./components/Login";
 import Chat from "./components/Chat";
 
-
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/chat/:conversationId" element={<Chat />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

@@ -36,10 +36,10 @@ const EmptyState = ({
             fontWeight="medium"
             letterSpacing="-0.5px"
           >
-            Let's Start Planning
+            Welcome to Easy Chat
           </Heading>
           <Text fontSize="lg" color="gray.400" textAlign="center">
-            What would you like to plan today?
+            Start a conversation with your AI assistant
           </Text>
         </VStack>
         <Box w="100%" maxW="700px">

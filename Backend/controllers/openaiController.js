@@ -103,17 +103,31 @@ export const getOpenAIResponse = async (req, res) => {
       content: msg.content,
     }));
 
-    const completion = await openai.chat.completions.create({
+    // Set up streaming response
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    let fullResponse = "";
+
+    const stream = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: messages,
+      stream: true,
     });
 
-    const aiResponse = completion.choices[0].message.content;
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullResponse += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
 
     // Add AI response to conversation
     conversation.messages.push({
       role: "assistant",
-      content: aiResponse,
+      content: fullResponse,
     });
 
     // Generate summary after 5th response (when messages.length is 10 - 5 pairs of user/assistant)
@@ -124,14 +138,50 @@ export const getOpenAIResponse = async (req, res) => {
 
     await conversation.save();
 
-    res.json({
-      response: aiResponse,
-      conversationId: conversation.conversationId,
-      title: conversation.title,
-      summary: conversation.summary,
-    });
+    // Send final message with conversation metadata
+    res.write(
+      `data: ${JSON.stringify({
+        done: true,
+        conversationId: conversation.conversationId,
+        title: conversation.title,
+        summary: conversation.summary,
+      })}\n\n`
+    );
+
+    res.end();
   } catch (error) {
     console.error("OpenAI API Error:", error);
     res.status(500).json({ error: "Failed to get response from OpenAI" });
+  }
+};
+
+export const getConversationsByGoogleId = async (req, res) => {
+  try {
+    const { googleId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+
+    if (!googleId) {
+      return res.status(400).json({ error: "Google ID is required" });
+    }
+
+    const total = await Conversation.countDocuments({ googleId });
+    const conversations = await Conversation.find({ googleId })
+      .sort({ updatedAt: -1 })
+      .select("conversationId title summary updatedAt messages")
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      conversations,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      hasMore: page * limit < total,
+    });
+  } catch (error) {
+    console.error("Error getting conversations:", error);
+    res.status(500).json({ error: "Failed to get conversations" });
   }
 };

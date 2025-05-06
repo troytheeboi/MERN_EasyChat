@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   VStack,
@@ -15,6 +15,8 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerFooter,
+  InputLeftElement,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   FaPaperPlane,
@@ -23,6 +25,8 @@ import {
   FaSearch,
   FaEdit,
   FaTrash,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import { PanelLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -38,11 +42,18 @@ const Sidebar = ({
   loadChatSession,
   isSidebarVisible,
   toggleSidebar,
+  searchQuery,
+  setSearchQuery,
+  currentPage,
+  totalPages,
+  hasMore,
+  onPageChange,
+  isLoading,
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [hoveredChatId, setHoveredChatId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate();
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const storedProfile = localStorage.getItem("userProfile");
@@ -50,6 +61,24 @@ const Sidebar = ({
       setUserProfile(JSON.parse(storedProfile));
     }
   }, []);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current || isLoading || !hasMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      onPageChange(currentPage + 1);
+    }
+  }, [currentPage, hasMore, isLoading, onPageChange]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+      return () => scrollContainer.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
 
   const handleSignOutClick = () => {
     handleSignOut(navigate);
@@ -118,7 +147,7 @@ const Sidebar = ({
     <VStack h="100%" spacing={4} align="stretch" px={2} pb={4} pt={4}>
       <HStack justify="space-between" w="100%" mb={2}>
         <Heading size="md" color="white">
-          My Planner
+          Easy Chat
         </Heading>
         <IconButton
           icon={<PanelLeft size={20} />}
@@ -147,9 +176,11 @@ const Sidebar = ({
       </Button>
 
       <InputGroup>
+        <InputLeftElement pointerEvents="none">
+          <FaSearch color="gray.500" />
+        </InputLeftElement>
         <Input
-          pl="40px"
-          placeholder="Search your threads..."
+          placeholder="Search conversations..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           bg="gray.700"
@@ -166,17 +197,10 @@ const Sidebar = ({
           }}
           color="white"
         />
-        <Box
-          position="absolute"
-          left="12px"
-          top="50%"
-          transform="translateY(-50%)"
-        >
-          <FaSearch color="gray" />
-        </Box>
       </InputGroup>
 
       <VStack
+        ref={scrollContainerRef}
         spacing={1}
         align="stretch"
         overflowY="auto"
@@ -286,6 +310,12 @@ const Sidebar = ({
             ))}
           </Box>
         ))}
+
+        {isLoading && (
+          <Box py={4} textAlign="center">
+            <Spinner size="sm" color="blue.500" />
+          </Box>
+        )}
       </VStack>
 
       <Box pt={4} borderTop="1px" borderColor="gray.700" w="100%">
@@ -320,7 +350,7 @@ const Sidebar = ({
       {variant === "drawer" ? (
         <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
           <DrawerContent bg="#1A202C" color="white">
-            <DrawerHeader>My Planner</DrawerHeader>
+            <DrawerHeader>Easy Chat</DrawerHeader>
             <DrawerBody>{SidebarContent}</DrawerBody>
           </DrawerContent>
         </Drawer>

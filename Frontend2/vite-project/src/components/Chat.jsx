@@ -7,15 +7,16 @@ import {
   Heading,
   useDisclosure,
   useBreakpointValue,
+  Button,
 } from "@chakra-ui/react";
 import { createStandaloneToast } from "@chakra-ui/toast";
-import { PanelLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ChatInput from "./ChatInput";
 import EmptyState from "./EmptyState";
 import MessageList from "./MessageList";
-import { sendMessage } from "../services/openaiService";
+import { sendMessage, getConversations } from "../services/openaiService";
 
 const { ToastContainer, toast } = createStandaloneToast();
 
@@ -109,6 +110,12 @@ const Chat = () => {
   const [currentSession, setCurrentSession] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { conversationId: paramConversationId } = useParams();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [allConversations, setAllConversations] = useState([]);
 
   const variant = useBreakpointValue({ base: "drawer", lg: "sidebar" });
 
@@ -142,7 +149,7 @@ const Chat = () => {
     const last30Days = new Date(today);
     last30Days.setDate(last30Days.getDate() - 30);
 
-    const filteredChats = chatSessions.filter((session) => {
+    const filteredChats = allConversations.filter((session) => {
       if (!searchQuery) return true;
       return (
         session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -177,14 +184,51 @@ const Chat = () => {
       acc[group].push(session);
       return acc;
     }, {});
-  }, [chatSessions, searchQuery]);
+  }, [allConversations, searchQuery]);
 
   useEffect(() => {
-    const savedSessions = localStorage.getItem("chatSessions");
-    if (savedSessions) {
-      setChatSessions(JSON.parse(savedSessions));
-    }
-  }, []);
+    const fetchConversations = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getConversations(currentPage);
+        const formattedConversations = response.conversations.map((conv) => ({
+          id: conv.conversationId,
+          title: conv.title,
+          summary: conv.summary || "No summary available",
+          date: new Date(conv.updatedAt).toISOString().split("T")[0],
+          messages: conv.messages || [],
+          conversationId: conv.conversationId,
+        }));
+
+        if (currentPage === 1) {
+          setAllConversations(formattedConversations);
+        } else {
+          setAllConversations((prev) => [...prev, ...formattedConversations]);
+        }
+
+        setTotalPages(response.totalPages);
+        setHasMore(response.hasMore);
+
+        // If there's a conversation ID in the URL, load that conversation
+        if (paramConversationId) {
+          const conversation = formattedConversations.find(
+            (conv) => conv.conversationId === paramConversationId
+          );
+          if (conversation) {
+            loadChatSession(conversation);
+          } else {
+            navigate("/chat");
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [currentPage, paramConversationId, navigate]);
 
   useEffect(() => {
     localStorage.setItem("chatSessions", JSON.stringify(chatSessions));
@@ -214,27 +258,49 @@ const Chat = () => {
           session.id === currentSession.id ? updatedSession : session
         )
       );
+      setAllConversations((prev) =>
+        prev.map((session) =>
+          session.id === currentSession.id ? updatedSession : session
+        )
+      );
       setCurrentSession(updatedSession);
     }
 
     setInputMessage("");
 
     try {
-      const response = await sendMessage(
-        inputMessage,
-        currentSession?.conversationId,
-        currentSession?.title
-      );
-
-      const aiMessage = {
+      // Create a temporary AI message that will be updated
+      const tempAiMessage = {
         id: Date.now() + 1,
-        content: response.response,
+        content: "",
         sender: "assistant",
         timestamp: new Date().toISOString(),
       };
 
-      // Update messages in the current view
-      setMessages((prev) => [...prev, aiMessage]);
+      // Add the temporary message to the UI
+      setMessages((prev) => [...prev, tempAiMessage]);
+
+      const response = await sendMessage(
+        inputMessage,
+        currentSession?.conversationId,
+        (streamedContent) => {
+          // Update the temporary message with the streamed content
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === tempAiMessage.id
+                ? { ...msg, content: streamedContent }
+                : msg
+            )
+          );
+        }
+      );
+
+      const aiMessage = {
+        id: tempAiMessage.id,
+        content: response.response,
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
+      };
 
       // Update messages in the chat session
       if (currentSession) {
@@ -243,14 +309,34 @@ const Chat = () => {
           messages: [...(currentSession.messages || []), aiMessage],
           conversationId: response.conversationId,
           title: response.title,
-          summary: response.summary || currentSession.summary,
+          summary: response.summary || "No summary available",
         };
         setChatSessions((prev) =>
           prev.map((session) =>
             session.id === currentSession.id ? updatedSession : session
           )
         );
+        setAllConversations((prev) =>
+          prev.map((session) =>
+            session.id === currentSession.id ? updatedSession : session
+          )
+        );
         setCurrentSession(updatedSession);
+        navigate(`/chat/${response.conversationId}`);
+      } else {
+        // Create new session if none exists
+        const newSession = {
+          id: response.conversationId,
+          title: response.title,
+          summary: response.summary || "No summary available",
+          date: new Date().toISOString().split("T")[0],
+          messages: [newMessage, aiMessage],
+          conversationId: response.conversationId,
+        };
+        setChatSessions((prev) => [newSession, ...prev]);
+        setAllConversations((prev) => [newSession, ...prev]);
+        setCurrentSession(newSession);
+        navigate(`/chat/${response.conversationId}`);
       }
     } catch (error) {
       toast({
@@ -265,22 +351,38 @@ const Chat = () => {
 
   const startNewChat = () => {
     const newSession = {
-      id: Date.now(),
+      id: Date.now().toString(),
       title: "New Chat",
       summary: "Start a new conversation",
       date: new Date().toISOString().split("T")[0],
       messages: [],
+      conversationId: null,
     };
     setChatSessions((prev) => [newSession, ...prev]);
+    setAllConversations((prev) => [newSession, ...prev]);
     setCurrentSession(newSession);
     setMessages([]);
     setShouldFocusInput(true);
+    navigate("/chat");
   };
 
   const loadChatSession = (session) => {
+    // Format messages to match the expected structure
+    const formattedMessages = session.messages.map((msg) => ({
+      id: msg._id || Date.now(),
+      content: msg.content,
+      sender: msg.role === "user" ? "user" : "assistant",
+      timestamp: msg.timestamp || new Date().toISOString(),
+    }));
+
     setCurrentSession(session);
-    setMessages(session.messages || []);
+    setMessages(formattedMessages);
     setShouldFocusInput(false);
+    navigate(`/chat/${session.conversationId}`);
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
   };
 
   return (
@@ -297,6 +399,13 @@ const Chat = () => {
           loadChatSession={loadChatSession}
           isSidebarVisible={isSidebarVisible}
           toggleSidebar={toggleSidebar}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasMore={hasMore}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
         />
         <Box flex="1" display="flex" flexDirection="column">
           {currentSession ? (
