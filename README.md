@@ -2,6 +2,9 @@
 
 Easy Chat is a modern, user-friendly AI chat application built with the MERN stack. It offers a seamless, real-time chat experience with an AI assistant, featuring message streaming, conversation history, and a beautiful, responsive interface.
 
+![image](https://github.com/user-attachments/assets/2a06177c-ccd8-4b91-b267-f97a4f868b6a)
+
+
 ## 🚀 Features
 
 - **Real-Time AI Chat**: Instantly interact with an AI assistant for answers, brainstorming, and productivity.
